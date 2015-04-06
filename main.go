@@ -92,7 +92,7 @@ func main() {
 	for {
 		droplet, _, err := client.Droplets.Get(droplet_id)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal("Couldn't get droplet info", err)
 		}
 		if len(droplet.Droplet.Networks.V4) > 0 {
 			// Droplet has probably come up
@@ -129,7 +129,7 @@ func main() {
 		fmt.Sprintf("root@%s", ip_address), "hostname").Output()
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Couldn't fetch hostname", err)
 	}
 
 	if strings.Trim(string(out), "\n\r ") != cfg.name {
