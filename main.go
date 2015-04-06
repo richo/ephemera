@@ -52,7 +52,7 @@ func get_token() string {
 	if err != nil {
 		log.Fatal("Couldn't read token file")
 	}
-	return string(dat)
+	return strings.Trim(string(dat), "\r\n ")
 }
 
 func get_config() *Config {
