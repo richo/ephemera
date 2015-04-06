@@ -17,9 +17,10 @@ type Config struct {
 // These are sane defaults for me right now, but they should be generalised or
 // pulled into a config file or something
 const (
-	REGION     = "sfo1"
-	SIZE       = "2gb"
-	IMAGE_SLUG = "debian-7-0-x64"
+	REGION      = "sfo1"
+	SIZE        = "2gb"
+	IMAGE_SLUG  = "debian-7-0-x64"
+	FINGERPRINT = "91:ff:af:1c:e2:0c:5e:b7:dd:8d:6c:27:0d:e6:20:63"
 )
 
 func parse_flags() *Config {
@@ -70,17 +71,21 @@ func main() {
 	// Specialcase to dump all instance types. This is silly
 	if cfg.name == "?" {
 		list_all_images(client)
-	} else {
-		create_ephemeral_instance(client, cfg.name)
+		return
 	}
+
+	droplet := create_ephemeral_instance(client, cfg.name)
+	log.Printf("%s", droplet)
+	log.Println("Waiting for droplet to come up")
 }
 
-func create_ephemeral_instance(client *godo.Client, name string) {
+func create_ephemeral_instance(client *godo.Client, name string) *godo.DropletRoot {
 
 	createRequest := &godo.DropletCreateRequest{
-		Name:   name,
-		Region: REGION,
-		Size:   SIZE,
+		Name:    name,
+		Region:  REGION,
+		Size:    SIZE,
+		SSHKeys: []godo.DropletCreateSSHKey{{Fingerprint: FINGERPRINT}},
 		Image: godo.DropletCreateImage{
 			Slug: IMAGE_SLUG,
 		},
@@ -92,7 +97,7 @@ func create_ephemeral_instance(client *godo.Client, name string) {
 		log.Fatal("Something bad happened: %s", err)
 	}
 
-	log.Printf("%s", newDroplet)
+	return newDroplet
 }
 
 func list_all_images(client *godo.Client) {
