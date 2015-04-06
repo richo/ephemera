@@ -87,10 +87,13 @@ func main() {
 		return
 	}
 
+	log.Println("Creating droplet")
+
 	droplet := create_ephemeral_instance(client, cfg.name)
 	droplet_id := droplet.Droplet.ID
 
-	log.Println("Waiting for droplet to come up")
+	log.Println("Droplet created")
+	log.Println("Waiting for network information")
 	var ip_address string
 	for {
 		droplet, _, err := client.Droplets.Get(droplet_id)
@@ -100,7 +103,7 @@ func main() {
 		if len(droplet.Droplet.Networks.V4) > 0 {
 			// Droplet has probably come up
 			ip_address = droplet.Droplet.Networks.V4[0].IPAddress
-			log.Println("Droplet appears to be up, boostrapping")
+			log.Println("Droplet has been assigned a network interface")
 			log.Println("Droplet address: ", ip_address)
 			break
 		}
@@ -109,7 +112,7 @@ func main() {
 		time.Sleep(5 * time.Second)
 	}
 
-	log.Println("Waiting for droplet's sshd to start")
+	log.Println("Waiting for droplet's network interface to come up")
 	addr := fmt.Sprintf("%s:22", ip_address)
 	for {
 		// The trick here is that even with our timeout, there's a window in
@@ -117,12 +120,12 @@ func main() {
 		conn, err := net.DialTimeout("tcp", addr, time.Second)
 		if err != nil {
 			time.Sleep(5 * time.Second)
-			log.Println("Retrying tcp probe")
 		} else {
 			conn.Close()
 			break
 		}
 	}
+	log.Println("Droplet's network interface has come up")
 
 	// Assert that the machine came up ok.
 	// This host key checking nonsense is ~bullshit but it's unclear how to get
