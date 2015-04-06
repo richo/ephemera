@@ -4,7 +4,9 @@ import (
 	"code.google.com/p/goauth2/oauth"
 	"flag"
 	"github.com/digitalocean/godo"
+	"io/ioutil"
 	"log"
+	"os/user"
 )
 
 type Config struct {
@@ -21,22 +23,42 @@ const (
 )
 
 func parse_flags() *Config {
-	key := flag.String("key", "", "api key")
 	name := flag.String("name", "", "instance name")
 	flag.Parse()
 
-	if *name == "" || *key == "" {
+	if *name == "" {
 		return nil
 	}
 
 	return &Config{
-		*key,
+		"",
 		*name,
 	}
 }
 
+func get_token() string {
+	usr, _ := user.Current()
+	dir := usr.HomeDir
+	dat, err := ioutil.ReadFile(dir + "/.ephemera")
+	if err != nil {
+		log.Fatal("Couldn't read token file")
+	}
+	return string(dat)
+}
+
+func get_config() *Config {
+	base := parse_flags()
+	if base == nil {
+		return nil
+	}
+
+	base.key = get_token()
+
+	return base
+}
+
 func main() {
-	cfg := parse_flags()
+	cfg := get_config()
 	if cfg == nil {
 		log.Fatal("Couldn't parse flags")
 	}
@@ -44,11 +66,19 @@ func main() {
 	t := &oauth.Transport{
 		Token: &oauth.Token{AccessToken: cfg.key},
 	}
-
 	client := godo.NewClient(t.Client())
+	// Specialcase to dump all instance types. This is silly
+	if cfg.name == "?" {
+		list_all_images(client)
+	} else {
+		create_ephemeral_instance(client, cfg.name)
+	}
+}
+
+func create_ephemeral_instance(client *godo.Client, name string) {
 
 	createRequest := &godo.DropletCreateRequest{
-		Name:   cfg.name,
+		Name:   name,
 		Region: REGION,
 		Size:   SIZE,
 		Image: godo.DropletCreateImage{
@@ -63,4 +93,33 @@ func main() {
 	}
 
 	log.Printf("%s", newDroplet)
+}
+
+func list_all_images(client *godo.Client) {
+	opt := &godo.ListOptions{}
+	for {
+		images, resp, err := client.Images.List(opt)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// append the current page's droplets to our list
+		for _, d := range images {
+			log.Printf("- %s\n", d)
+		}
+
+		// if we are at the last page, break out the for loop
+		if resp.Links == nil || resp.Links.IsLastPage() {
+			break
+		}
+
+		page, err := resp.Links.CurrentPage()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// set the page we want for the next request
+		opt.Page = page + 1
+	}
+
 }
