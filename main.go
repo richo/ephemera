@@ -136,8 +136,31 @@ func main() {
 		log.Fatal("Machine came up with a weird name, ", string(out))
 	}
 
-	log.Printf("Command to shutdown: ")
-	fmt.Println(shutdown_command(cfg, droplet_id))
+	// Copy the script to shut the machine down up
+	log.Println("Sending the shutdown script to the remote host")
+	cmd := exec.Command("ssh", "-o", "StrictHostKeyChecking=no",
+		"-o", "ControlMaster=no",
+		fmt.Sprintf("root@%s", ip_address), "cat > .shutdown")
+	pipe, err := cmd.StdinPipe()
+	if err != nil {
+		log.Fatal("Couldn't get input pipe", err)
+	}
+	cmd.Start()
+	shutdown_cmd := shutdown_command(cfg, droplet_id)
+	log.Println("Sending the command")
+	pipe.Write([]byte(shutdown_cmd))
+	pipe.Write([]byte("\n"))
+	pipe.Close()
+	log.Println("Waiting on the remote process to end")
+	cmd.Wait()
+
+	log.Println("Queing the instance to shutdown in 24 hours")
+	cmd = exec.Command("ssh", "-o", "StrictHostKeyChecking=no",
+		"-o", "ControlMaster=no",
+		fmt.Sprintf("root@%s", ip_address), "at +8 hours -f .shutdown")
+	cmd.Wait()
+
+	log.Printf("Successfully bootstrapped", ip_address)
 }
 
 func create_ephemeral_instance(client *godo.Client, name string) *godo.DropletRoot {
