@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os/user"
+	"time"
 )
 
 type Config struct {
@@ -75,8 +76,24 @@ func main() {
 	}
 
 	droplet := create_ephemeral_instance(client, cfg.name)
-	log.Printf("%s", droplet)
+	droplet_id := droplet.Droplet.ID
+
 	log.Println("Waiting for droplet to come up")
+	for {
+		droplet, _, err := client.Droplets.Get(droplet_id)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if len(droplet.Droplet.Networks.V4) > 0 {
+			// Droplet has probably come up
+			log.Println("Droplet appears to be up, boostrapping")
+			log.Println("Droplet address: ", droplet.Droplet.Networks.V4[0].IPAddress)
+			break
+		}
+
+		log.Printf("Sleeping for 5s")
+		time.Sleep(5 * time.Second)
+	}
 }
 
 func create_ephemeral_instance(client *godo.Client, name string) *godo.DropletRoot {
