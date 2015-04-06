@@ -8,7 +8,9 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
+	"os/exec"
 	"os/user"
+	"strings"
 	"time"
 )
 
@@ -117,6 +119,21 @@ func main() {
 			conn.Close()
 			break
 		}
+	}
+
+	// Assert that the machine came up ok.
+	// This host key checking nonsense is ~bullshit but it's unclear how to get
+	// the host key out of the digital ocean API.
+
+	out, err := exec.Command("ssh", "-o", "StrictHostKeyChecking=no",
+		fmt.Sprintf("root@%s", ip_address), "hostname").Output()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if strings.Trim(string(out), "\n\r ") != cfg.name {
+		log.Fatal("Machine came up with a weird name, ", string(out))
 	}
 
 	log.Printf("Command to shutdown: ")
