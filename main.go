@@ -3,6 +3,7 @@ package main
 import (
 	"code.google.com/p/goauth2/oauth"
 	"flag"
+	"fmt"
 	"github.com/digitalocean/godo"
 	"io/ioutil"
 	"log"
@@ -59,6 +60,11 @@ func get_config() *Config {
 	return base
 }
 
+func shutdown_command(cfg *Config, id int) string {
+	return fmt.Sprintf("curl -X DELETE -H 'Content-Type: application/json' -H 'Authorization: Bearer %s' 'https://api.digitalocean.com/v2/droplets/%d'",
+		cfg.key, id)
+}
+
 func main() {
 	cfg := get_config()
 	if cfg == nil {
@@ -94,6 +100,9 @@ func main() {
 		log.Printf("Sleeping for 5s")
 		time.Sleep(5 * time.Second)
 	}
+
+	log.Printf("Command to shutdown: ")
+	fmt.Println(shutdown_command(cfg, droplet_id))
 }
 
 func create_ephemeral_instance(client *godo.Client, name string) *godo.DropletRoot {
