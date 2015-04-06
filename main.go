@@ -7,6 +7,7 @@ import (
 	"github.com/digitalocean/godo"
 	"io/ioutil"
 	"log"
+	"net"
 	"os/user"
 	"time"
 )
@@ -85,6 +86,7 @@ func main() {
 	droplet_id := droplet.Droplet.ID
 
 	log.Println("Waiting for droplet to come up")
+	var ip_address string
 	for {
 		droplet, _, err := client.Droplets.Get(droplet_id)
 		if err != nil {
@@ -92,13 +94,26 @@ func main() {
 		}
 		if len(droplet.Droplet.Networks.V4) > 0 {
 			// Droplet has probably come up
+			ip_address = droplet.Droplet.Networks.V4[0].IPAddress
 			log.Println("Droplet appears to be up, boostrapping")
-			log.Println("Droplet address: ", droplet.Droplet.Networks.V4[0].IPAddress)
+			log.Println("Droplet address: ", ip_address)
 			break
 		}
 
 		log.Printf("Sleeping for 5s")
 		time.Sleep(5 * time.Second)
+	}
+
+	log.Println("Waiting for droplet's sshd to start")
+	addr := fmt.Sprintf("%s:22", ip_address)
+	for {
+		conn, err := net.DialTimeout("tcp", addr, 5)
+		if err != nil {
+			log.Println("Retrying tcp probe")
+		} else {
+			conn.Close()
+			break
+		}
 	}
 
 	log.Printf("Command to shutdown: ")
