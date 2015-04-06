@@ -15,8 +15,9 @@ import (
 )
 
 type Config struct {
-	key  string
-	name string
+	key   string
+	name  string
+	hours int
 }
 
 // These are sane defaults for me right now, but they should be generalised or
@@ -30,6 +31,7 @@ const (
 
 func parse_flags() *Config {
 	name := flag.String("name", "", "instance name")
+	hours := flag.Int("hours", 24, "hours the instance should persist")
 	flag.Parse()
 
 	if *name == "" {
@@ -39,6 +41,7 @@ func parse_flags() *Config {
 	return &Config{
 		"",
 		*name,
+		*hours,
 	}
 }
 
@@ -157,7 +160,8 @@ func main() {
 	log.Println("Queing the instance to shutdown in 24 hours")
 	cmd = exec.Command("ssh", "-o", "StrictHostKeyChecking=no",
 		"-o", "ControlMaster=no",
-		fmt.Sprintf("root@%s", ip_address), "at +8 hours -f .shutdown")
+		fmt.Sprintf("root@%s", ip_address),
+		fmt.Sprintf("at -f .shutdown now + %d hours", cfg.hours))
 	cmd.Wait()
 
 	log.Printf("Successfully bootstrapped", ip_address)
