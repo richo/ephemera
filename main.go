@@ -18,7 +18,7 @@ type Config struct {
 // pulled into a config file or something
 const (
 	REGION     = "sfo1"
-	SIZE       = "2g"
+	SIZE       = "2gb"
 	IMAGE_SLUG = "debian-7-0-x64"
 )
 
