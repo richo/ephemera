@@ -160,14 +160,14 @@ func main() {
 	log.Println("Waiting on the remote process to end")
 	cmd.Wait()
 
-	log.Println("Queing the instance to shutdown in 24 hours")
+	log.Printf("Queing the instance to shutdown in %d hours", cfg.hours)
 	cmd = exec.Command("ssh", "-o", "StrictHostKeyChecking=no",
 		"-o", "ControlMaster=no",
 		fmt.Sprintf("root@%s", ip_address),
 		fmt.Sprintf("at -f .shutdown now + %d hours", cfg.hours))
 	cmd.Wait()
 
-	log.Printf("Successfully bootstrapped", ip_address)
+	log.Println("Successfully bootstrapped", ip_address)
 }
 
 func create_ephemeral_instance(client *godo.Client, name string) *godo.DropletRoot {
