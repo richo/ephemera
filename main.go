@@ -188,7 +188,7 @@ func create_ephemeral_instance(client *godo.Client, name string) *godo.DropletRo
 	newDroplet, _, err := client.Droplets.Create(createRequest)
 
 	if err != nil {
-		log.Fatal("Something bad happened: %s", err)
+		log.Fatal("Something bad happened:", err)
 	}
 
 	return newDroplet
