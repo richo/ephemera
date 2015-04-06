@@ -19,7 +19,7 @@ type Config struct {
 const (
 	REGION     = "sfo1"
 	SIZE       = "2g"
-	IMAGE_SLUG = "3102387" // Debian 7.0 x64
+	IMAGE_SLUG = "debian-7-0-x64"
 )
 
 func parse_flags() *Config {
