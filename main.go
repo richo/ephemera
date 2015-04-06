@@ -165,7 +165,10 @@ func main() {
 		"-o", "ControlMaster=no",
 		fmt.Sprintf("root@%s", ip_address),
 		fmt.Sprintf("at -f .shutdown now + %d hours", cfg.hours))
-	cmd.Wait()
+	_, err = cmd.Output()
+	if err != nil {
+		log.Fatal("Couldn't configure shutdown")
+	}
 
 	log.Println("Successfully bootstrapped", ip_address)
 }
