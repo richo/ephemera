@@ -107,8 +107,11 @@ func main() {
 	log.Println("Waiting for droplet's sshd to start")
 	addr := fmt.Sprintf("%s:22", ip_address)
 	for {
-		conn, err := net.DialTimeout("tcp", addr, 5)
+		// The trick here is that even with our timeout, there's a window in
+		// which the connection will be refused.
+		conn, err := net.DialTimeout("tcp", addr, time.Second)
 		if err != nil {
+			time.Sleep(5 * time.Second)
 			log.Println("Retrying tcp probe")
 		} else {
 			conn.Close()
