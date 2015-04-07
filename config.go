@@ -11,6 +11,7 @@ import (
 func parse_flags() *Config {
 	name := flag.String("name", "", "instance name")
 	hours := flag.Int("hours", 24, "hours the instance should persist")
+	image := flag.String("image", "debian-7-0-x64", "image slug")
 	flag.Parse()
 
 	if *name == "" {
@@ -20,6 +21,7 @@ func parse_flags() *Config {
 	return &Config{
 		"",
 		*name,
+		*image,
 		*hours,
 	}
 }

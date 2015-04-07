@@ -14,6 +14,7 @@ import (
 type Config struct {
 	key   string
 	name  string
+	image string
 	hours int
 }
 
@@ -22,7 +23,6 @@ type Config struct {
 const (
 	REGION      = "sfo1"
 	SIZE        = "2gb"
-	IMAGE_SLUG  = "debian-7-0-x64"
 	FINGERPRINT = "91:ff:af:1c:e2:0c:5e:b7:dd:8d:6c:27:0d:e6:20:63"
 )
 
@@ -48,8 +48,9 @@ func main() {
 	}
 
 	log.Println("Creating droplet")
+	log.Printf("Using image %s", cfg.image)
 
-	droplet := createEphemeralInstance(client, cfg.name)
+	droplet := createEphemeralInstance(client, cfg.name, cfg.image)
 	droplet_id := droplet.Droplet.ID
 
 	log.Println("Droplet created")
