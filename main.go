@@ -45,7 +45,7 @@ func parse_flags() *Config {
 	}
 }
 
-func get_token() string {
+func getToken() string {
 	usr, _ := user.Current()
 	dir := usr.HomeDir
 	dat, err := ioutil.ReadFile(dir + "/.ephemera")
@@ -55,24 +55,24 @@ func get_token() string {
 	return strings.Trim(string(dat), "\r\n ")
 }
 
-func get_config() *Config {
+func getConfig() *Config {
 	base := parse_flags()
 	if base == nil {
 		return nil
 	}
 
-	base.key = get_token()
+	base.key = getToken()
 
 	return base
 }
 
-func shutdown_command(cfg *Config, id int) string {
+func shutdownCommand(cfg *Config, id int) string {
 	return fmt.Sprintf("curl -X DELETE -H 'Content-Type: application/json' -H 'Authorization: Bearer %s' 'https://api.digitalocean.com/v2/droplets/%d'",
 		cfg.key, id)
 }
 
 func main() {
-	cfg := get_config()
+	cfg := getConfig()
 	if cfg == nil {
 		log.Fatal("Couldn't parse flags")
 	}
@@ -83,13 +83,13 @@ func main() {
 	client := godo.NewClient(t.Client())
 	// Specialcase to dump all instance types. This is silly
 	if cfg.name == "?" {
-		list_all_images(client)
+		listAllImages(client)
 		return
 	}
 
 	log.Println("Creating droplet")
 
-	droplet := create_ephemeral_instance(client, cfg.name)
+	droplet := createEphemeralInstance(client, cfg.name)
 	droplet_id := droplet.Droplet.ID
 
 	log.Println("Droplet created")
@@ -152,7 +152,7 @@ func main() {
 		log.Fatal("Couldn't get input pipe", err)
 	}
 	cmd.Start()
-	shutdown_cmd := shutdown_command(cfg, droplet_id)
+	shutdown_cmd := shutdownCommand(cfg, droplet_id)
 	log.Println("Sending the command")
 	pipe.Write([]byte(shutdown_cmd))
 	pipe.Write([]byte("\n"))
@@ -173,7 +173,7 @@ func main() {
 	log.Println("Successfully bootstrapped", ip_address)
 }
 
-func create_ephemeral_instance(client *godo.Client, name string) *godo.DropletRoot {
+func createEphemeralInstance(client *godo.Client, name string) *godo.DropletRoot {
 
 	createRequest := &godo.DropletCreateRequest{
 		Name:    name,
@@ -194,7 +194,7 @@ func create_ephemeral_instance(client *godo.Client, name string) *godo.DropletRo
 	return newDroplet
 }
 
-func list_all_images(client *godo.Client) {
+func listAllImages(client *godo.Client) {
 	opt := &godo.ListOptions{}
 	for {
 		images, resp, err := client.Images.List(opt)
