@@ -131,4 +131,10 @@ func main() {
 	}
 
 	log.Println("Successfully bootstrapped", ip_address)
+
+	cost, err := costPerHour(SIZE, client)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("Instance will cost: %f", cost*float64(cfg.hours))
 }
