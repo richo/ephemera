@@ -69,7 +69,6 @@ func main() {
 			break
 		}
 
-		log.Printf("Sleeping for 5s")
 		time.Sleep(5 * time.Second)
 	}
 
@@ -114,11 +113,9 @@ func main() {
 	}
 	cmd.Start()
 	shutdown_cmd := shutdownCommand(cfg, droplet_id)
-	log.Println("Sending the command")
 	pipe.Write([]byte(shutdown_cmd))
 	pipe.Write([]byte("\n"))
 	pipe.Close()
-	log.Println("Waiting on the remote process to end")
 	cmd.Wait()
 
 	log.Printf("Queing the instance to shutdown in %d hours", cfg.hours)
