@@ -21,9 +21,8 @@ type Config struct {
 // These are sane defaults for me right now, but they should be generalised or
 // pulled into a config file or something
 const (
-	REGION      = "sfo1"
-	SIZE        = "2gb"
-	FINGERPRINT = "91:ff:af:1c:e2:0c:5e:b7:dd:8d:6c:27:0d:e6:20:63"
+	REGION = "sfo1"
+	SIZE   = "2gb"
 )
 
 func shutdownCommand(cfg *Config, id int) string {
@@ -50,7 +49,11 @@ func main() {
 	log.Println("Creating droplet")
 	log.Printf("Using image %s", cfg.image)
 
-	droplet := createEphemeralInstance(client, cfg.name, cfg.image)
+	key := getKey()
+
+	log.Printf("Using key with fingerprint %s", key.fingerprint)
+
+	droplet := createEphemeralInstance(client, cfg.name, key.fingerprint, cfg.image)
 	droplet_id := droplet.Droplet.ID
 
 	log.Println("Droplet created")
@@ -92,6 +95,7 @@ func main() {
 	// the host key out of the digital ocean API.
 
 	out, err := exec.Command("ssh", "-o", "StrictHostKeyChecking=no",
+		"-i", key.file,
 		fmt.Sprintf("root@%s", ip_address), "hostname").Output()
 
 	if err != nil {
@@ -105,6 +109,7 @@ func main() {
 	// Copy the script to shut the machine down up
 	log.Println("Sending the shutdown script to the remote host")
 	cmd := exec.Command("ssh", "-o", "StrictHostKeyChecking=no",
+		"-i", key.file,
 		"-o", "ControlMaster=no",
 		fmt.Sprintf("root@%s", ip_address), "cat > .shutdown")
 	pipe, err := cmd.StdinPipe()
@@ -120,6 +125,7 @@ func main() {
 
 	log.Printf("Queing the instance to shutdown in %d hours", cfg.hours)
 	cmd = exec.Command("ssh", "-o", "StrictHostKeyChecking=no",
+		"-i", key.file,
 		"-o", "ControlMaster=no",
 		fmt.Sprintf("root@%s", ip_address),
 		fmt.Sprintf("at -f .shutdown now + %d hours", cfg.hours))
