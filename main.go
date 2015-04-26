@@ -140,5 +140,5 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Printf("Instance will cost: %f", cost*float64(cfg.hours))
+	log.Printf("Instance will cost: $%.2f", cost*float64(cfg.hours))
 }
