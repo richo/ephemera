@@ -22,7 +22,7 @@ type Config struct {
 // pulled into a config file or something
 const (
 	REGION = "sfo1"
-	SIZE   = "2gb"
+	SIZE   = "4gb"
 )
 
 func shutdownCommand(cfg *Config, id int) string {
