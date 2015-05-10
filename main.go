@@ -6,6 +6,7 @@ import (
 	"github.com/digitalocean/godo"
 	"log"
 	"net"
+	"os"
 	"os/exec"
 	"strings"
 	"time"
@@ -90,12 +91,31 @@ func main() {
 	}
 	log.Println("Droplet's network interface has come up")
 
+	log.Printf("Removing any existing host key for %s", ip_address)
+	cmd := exec.Command("ssh-keygen", "-R", ip_address)
+	err := cmd.Run()
+	if err != nil {
+		log.Fatal("Couldn't remove host key")
+	}
+
+	log.Printf("Fetching ssh host key for %s", ip_address)
+	cmd = exec.Command("ssh-keyscan", ip_address)
+	output, err := cmd.Output()
+	if err != nil {
+		log.Fatal("Couldn't retrieve host key")
+	}
+
+	fh, err := os.OpenFile(os.ExpandEnv("$HOME/.ssh/known_hosts"), os.O_APPEND, 0600)
+	if err != nil {
+		log.Fatal("Couldn't open known hosts files")
+	}
+	fh.Write(output)
+
 	// Assert that the machine came up ok.
 	// This host key checking nonsense is ~bullshit but it's unclear how to get
 	// the host key out of the digital ocean API.
 
-	out, err := exec.Command("ssh", "-o", "StrictHostKeyChecking=no",
-		"-i", key.file,
+	out, err := exec.Command("ssh", "-i", key.file,
 		fmt.Sprintf("root@%s", ip_address), "hostname").Output()
 
 	if err != nil {
@@ -108,8 +128,7 @@ func main() {
 
 	// Copy the script to shut the machine down up
 	log.Println("Sending the shutdown script to the remote host")
-	cmd := exec.Command("ssh", "-o", "StrictHostKeyChecking=no",
-		"-i", key.file,
+	cmd = exec.Command("ssh", "-i", key.file,
 		"-o", "ControlMaster=no",
 		fmt.Sprintf("root@%s", ip_address), "cat > .shutdown")
 	pipe, err := cmd.StdinPipe()
@@ -124,8 +143,7 @@ func main() {
 	cmd.Wait()
 
 	log.Printf("Queing the instance to shutdown in %d hours", cfg.hours)
-	cmd = exec.Command("ssh", "-o", "StrictHostKeyChecking=no",
-		"-i", key.file,
+	cmd = exec.Command("ssh", "-i", key.file,
 		"-o", "ControlMaster=no",
 		fmt.Sprintf("root@%s", ip_address),
 		fmt.Sprintf("at -f .shutdown now + %d hours", cfg.hours))
