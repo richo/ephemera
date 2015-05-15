@@ -99,34 +99,32 @@ func main() {
 	}
 
 	log.Printf("Fetching ssh host key for %s", ip_address)
-	cmd = exec.Command("ssh-keyscan", ip_address)
+	cmd = exec.Command("ssh", "-i", key.file,
+		"-o", "StrictHostKeyChecking=no",
+		"-o", "ControlMaster=no",
+		fmt.Sprintf("root@%s", ip_address), "hostname; ssh-keyscan localhost")
 	output, err := cmd.Output()
 	if err != nil {
 		log.Fatal("Couldn't retrieve host key")
 	}
 
+	// Assert that the machine came up ok.
+	// This host key checking nonsense is ~bullshit but it's unclear how to get
+	// the host key out of the digital ocean API.
+	parts := strings.Split(string(output), "\n")
+	if parts[0] != cfg.name {
+		log.Fatal("Machine came up with a weird name, ", string(parts[0]))
+	}
+
+	host_key := parts[1]
+
 	fh, err := os.OpenFile(os.ExpandEnv("$HOME/.ssh/known_hosts"), os.O_APPEND, 0600)
 	if err != nil {
 		log.Fatal("Couldn't open known hosts files")
 	}
-	fh.Write(output)
+	fh.Write([]byte(host_key))
+	fh.Write([]byte("\n"))
 
-	// Assert that the machine came up ok.
-	// This host key checking nonsense is ~bullshit but it's unclear how to get
-	// the host key out of the digital ocean API.
-
-	out, err := exec.Command("ssh", "-i", key.file,
-		fmt.Sprintf("root@%s", ip_address), "hostname").Output()
-
-	if err != nil {
-		log.Fatal("Couldn't fetch hostname", err)
-	}
-
-	if strings.Trim(string(out), "\n\r ") != cfg.name {
-		log.Fatal("Machine came up with a weird name, ", string(out))
-	}
-
-	// Copy the script to shut the machine down up
 	log.Println("Sending the shutdown script to the remote host")
 	cmd = exec.Command("ssh", "-i", key.file,
 		"-o", "ControlMaster=no",
