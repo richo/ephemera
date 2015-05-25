@@ -40,12 +40,12 @@ func costPerHour(slug string, client *godo.Client) (float64, error) {
 	return 0, errors.New(fmt.Sprintf("Couldn't find slug %s", slug))
 }
 
-func createEphemeralInstance(client *godo.Client, name, fingerprint, image_slug string) *godo.DropletRoot {
+func createEphemeralInstance(client *godo.Client, name, fingerprint, image_slug, size string) *godo.DropletRoot {
 
 	createRequest := &godo.DropletCreateRequest{
 		Name:    name,
 		Region:  REGION,
-		Size:    SIZE,
+		Size:    size,
 		SSHKeys: []godo.DropletCreateSSHKey{{Fingerprint: fingerprint}},
 		Image: godo.DropletCreateImage{
 			Slug: image_slug,

@@ -17,13 +17,13 @@ type Config struct {
 	name  string
 	image string
 	hours int
+	size  string
 }
 
 // These are sane defaults for me right now, but they should be generalised or
 // pulled into a config file or something
 const (
 	REGION = "sfo1"
-	SIZE   = "4gb"
 )
 
 func shutdownCommand(cfg *Config, id int) string {
@@ -54,7 +54,7 @@ func main() {
 
 	log.Printf("Using key with fingerprint %s", key.fingerprint)
 
-	droplet := createEphemeralInstance(client, cfg.name, key.fingerprint, cfg.image)
+	droplet := createEphemeralInstance(client, cfg.name, key.fingerprint, cfg.image, cfg.size)
 	droplet_id := droplet.Droplet.ID
 
 	log.Println("Droplet created")
@@ -152,7 +152,7 @@ func main() {
 
 	log.Println("Successfully bootstrapped", ip_address)
 
-	cost, err := costPerHour(SIZE, client)
+	cost, err := costPerHour(cfg.size, client)
 	if err != nil {
 		log.Fatal(err)
 	}
