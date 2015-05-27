@@ -4,6 +4,7 @@ import (
 	"code.google.com/p/goauth2/oauth"
 	"fmt"
 	"github.com/digitalocean/godo"
+	"io"
 	"log"
 	"net"
 	"os"
@@ -13,11 +14,12 @@ import (
 )
 
 type Config struct {
-	key   string
-	name  string
-	image string
-	hours int
-	size  string
+	key       string
+	name      string
+	image     string
+	hours     int
+	size      string
+	bootstrap string
 }
 
 // These are sane defaults for me right now, but they should be generalised or
@@ -148,6 +150,28 @@ func main() {
 	_, err = cmd.Output()
 	if err != nil {
 		log.Fatal("Couldn't configure shutdown")
+	}
+
+	if cfg.bootstrap != "" {
+		log.Printf("Bootstrapping with %s", cfg.bootstrap)
+		fh, err := os.Open(cfg.bootstrap)
+		if err != nil {
+			log.Printf("Couldn't open bootstrap script `%s`", cfg.bootstrap)
+		} else {
+			cmd = exec.Command("ssh", "-i", key.file,
+				"-o", "ControlMaster=no", "bash",
+				fmt.Sprintf("root@%s", ip_address))
+			pipe, err := cmd.StdinPipe()
+			if err != nil {
+				log.Fatal("Couldn't get input pipe", err)
+			}
+			_, err = io.Copy(pipe, fh)
+			if err != nil {
+				log.Fatal("Bootstrapping failed")
+			}
+			pipe.Close()
+			cmd.Wait()
+		}
 	}
 
 	log.Println("Successfully bootstrapped", ip_address)

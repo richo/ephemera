@@ -13,6 +13,7 @@ func parse_flags() *Config {
 	hours := flag.Int("hours", 24, "hours the instance should persist")
 	image := flag.String("image", "debian-7-0-x64", "image slug")
 	size := flag.String("size", "2gb", "size of instance")
+	bootstrap := flag.String("bootstrap", "", "shell script to bootstrap with")
 	flag.Parse()
 
 	if *name == "" {
@@ -25,6 +26,7 @@ func parse_flags() *Config {
 		*image,
 		*hours,
 		*size,
+		*bootstrap,
 	}
 }
 
