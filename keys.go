@@ -31,12 +31,18 @@ func getKey() key {
 		keyfile = fmt.Sprintf("%s/.ssh/id_rsa", user.HomeDir)
 	}
 
-	out, _ := exec.Command("ssh-keygen", "-l", "-f", keyfile).Output()
+	out, _ := exec.Command("ssh-keygen", "-E", "md5", "-l", "-f", keyfile).Output()
 
 	parts := strings.Split(string(out), " ")
 	if len(parts) == 1 {
 		log.Fatal("Couldn't parse key at ", keyfile)
 	}
+
+	fpr := strings.Split(parts[1], ":")
+	if fpr[0] == "MD5" {
+		fpr = fpr[1:]
+	}
+	fingerprint := strings.Join(fpr, ":")
 
 	bits, err := strconv.ParseUint(parts[0], 10, 0)
 	if err != nil {
@@ -48,7 +54,7 @@ func getKey() key {
 
 	return key{
 		bits:        uint(bits),
-		fingerprint: string(parts[1]),
+		fingerprint: fingerprint,
 		comment:     comment,
 		algo:        string(parts[num_parts-1]),
 		file:        keyfile,
